@@ -9,6 +9,10 @@ const STATUS_OPTIONS = [
 
 const UNCHECKED_STATUS = "unchecked";
 const STORAGE_KEY = "checkinToolStudents";
+const DEFAULT_FIELD_LABELS = {
+  identifier: "学号",
+  name: "姓名"
+};
 
 const fileInput = document.getElementById("excelFile");
 const exportBtn = document.getElementById("exportBtn");
@@ -27,10 +31,13 @@ const absentCount = document.getElementById("absentCount");
 const uncheckedCount = document.getElementById("uncheckedCount");
 
 let students = [];
+let fieldLabels = { ...DEFAULT_FIELD_LABELS };
 
 // 页面加载时先恢复 localStorage 中的考勤数据。
 document.addEventListener("DOMContentLoaded", () => {
-  students = loadStudents();
+  const savedData = loadSavedData();
+  students = savedData.students;
+  fieldLabels = savedData.fieldLabels;
   render();
 });
 
@@ -40,24 +47,51 @@ clearBtn.addEventListener("click", clearRecords);
 resetBtn.addEventListener("click", resetAllToUnchecked);
 searchInput.addEventListener("input", renderStudentList);
 
-function loadStudents() {
+function loadSavedData() {
   const saved = localStorage.getItem(STORAGE_KEY);
 
   if (!saved) {
-    return [];
+    return {
+      students: [],
+      fieldLabels: { ...DEFAULT_FIELD_LABELS }
+    };
   }
 
   try {
     const parsed = JSON.parse(saved);
-    return Array.isArray(parsed) ? parsed : [];
+
+    // 兼容旧版本：旧数据直接保存为学生数组。
+    if (Array.isArray(parsed)) {
+      return {
+        students: parsed,
+        fieldLabels: { ...DEFAULT_FIELD_LABELS }
+      };
+    }
+
+    return {
+      students: Array.isArray(parsed.students) ? parsed.students : [],
+      fieldLabels: {
+        identifier: parsed.fieldLabels?.identifier || DEFAULT_FIELD_LABELS.identifier,
+        name: parsed.fieldLabels?.name || DEFAULT_FIELD_LABELS.name
+      }
+    };
   } catch (error) {
     console.error("读取本地考勤数据失败：", error);
-    return [];
+    return {
+      students: [],
+      fieldLabels: { ...DEFAULT_FIELD_LABELS }
+    };
   }
 }
 
 function saveStudents() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({
+      students,
+      fieldLabels
+    })
+  );
 }
 
 function handleImport(event) {
@@ -93,14 +127,15 @@ function handleImport(event) {
         raw: false
       });
 
-      const importedStudents = parseStudentRows(rows);
+      const importResult = parseStudentRows(rows);
 
-      if (importedStudents.length === 0) {
-        alert("没有读取到学生数据。请确认 Excel 格式为：学号、姓名。");
+      if (importResult.students.length === 0) {
+        alert("没有读取到学生数据。请确认 Excel 第一行为表头，后面是学生数据。");
         return;
       }
 
-      students = importedStudents;
+      students = importResult.students;
+      fieldLabels = importResult.fieldLabels;
       saveStudents();
       searchInput.value = "";
       render();
@@ -118,12 +153,26 @@ function handleImport(event) {
 }
 
 function parseStudentRows(rows) {
-  const dataRows = removeHeaderRow(rows);
+  const usefulRows = rows.filter((row) => {
+    return row.some((cell) => normalizeCell(cell));
+  });
 
-  return dataRows
+  if (usefulRows.length < 2) {
+    return {
+      students: [],
+      fieldLabels: { ...DEFAULT_FIELD_LABELS }
+    };
+  }
+
+  // 第一行作为动态表头，支持“学号/姓名”“序号/姓名”等不同叫法。
+  const headerRow = usefulRows[0].map(normalizeCell);
+  const columnConfig = getColumnConfig(headerRow);
+  const dataRows = usefulRows.slice(1);
+
+  const importedStudents = dataRows
     .map((row, index) => {
-      const studentId = normalizeCell(row[0]);
-      const name = normalizeCell(row[1]);
+      const studentId = normalizeCell(row[columnConfig.identifierIndex]);
+      const name = normalizeCell(row[columnConfig.nameIndex]);
 
       if (!studentId && !name) {
         return null;
@@ -138,27 +187,37 @@ function parseStudentRows(rows) {
       };
     })
     .filter(Boolean);
+
+  return {
+    students: importedStudents,
+    fieldLabels: {
+      identifier: columnConfig.identifierLabel,
+      name: columnConfig.nameLabel
+    }
+  };
 }
 
-function removeHeaderRow(rows) {
-  const usefulRows = rows.filter((row) => {
-    const studentId = normalizeCell(row[0]);
-    const name = normalizeCell(row[1]);
-    return studentId || name;
+function getColumnConfig(headerRow) {
+  const nameIndex = findHeaderIndex(headerRow, ["姓名", "名字", "名称", "name"]);
+  const resolvedNameIndex = nameIndex >= 0 ? nameIndex : 1;
+  const identifierIndex = headerRow.findIndex((header, index) => {
+    return index !== resolvedNameIndex && header;
   });
+  const resolvedIdentifierIndex = identifierIndex >= 0 ? identifierIndex : 0;
 
-  if (usefulRows.length === 0) {
-    return [];
-  }
+  return {
+    identifierIndex: resolvedIdentifierIndex,
+    nameIndex: resolvedNameIndex,
+    identifierLabel: headerRow[resolvedIdentifierIndex] || DEFAULT_FIELD_LABELS.identifier,
+    nameLabel: headerRow[resolvedNameIndex] || DEFAULT_FIELD_LABELS.name
+  };
+}
 
-  const firstStudentId = normalizeCell(usefulRows[0][0]);
-  const firstName = normalizeCell(usefulRows[0][1]);
-  const looksLikeHeader =
-    firstStudentId.includes("学号") ||
-    firstName.includes("姓名") ||
-    firstName.includes("名字");
-
-  return looksLikeHeader ? usefulRows.slice(1) : usefulRows;
+function findHeaderIndex(headerRow, keywords) {
+  return headerRow.findIndex((header) => {
+    const normalizedHeader = header.toLowerCase();
+    return keywords.some((keyword) => normalizedHeader.includes(keyword.toLowerCase()));
+  });
 }
 
 function normalizeCell(value) {
@@ -166,8 +225,13 @@ function normalizeCell(value) {
 }
 
 function render() {
+  updateSearchPlaceholder();
   renderStats();
   renderStudentList();
+}
+
+function updateSearchPlaceholder() {
+  searchInput.placeholder = `搜索${fieldLabels.name}或${fieldLabels.identifier}`;
 }
 
 function renderStats() {
@@ -189,8 +253,8 @@ function countByStatus(status) {
 function renderStudentList() {
   const keyword = searchInput.value.trim().toLowerCase();
   const filteredStudents = students.filter((student) => {
-    const studentId = student.studentId.toLowerCase();
-    const name = student.name.toLowerCase();
+    const studentId = String(student.studentId || "").toLowerCase();
+    const name = String(student.name || "").toLowerCase();
     return studentId.includes(keyword) || name.includes(keyword);
   });
 
@@ -222,7 +286,7 @@ function createStudentCard(student) {
 
   const studentId = document.createElement("p");
   studentId.className = "student-id";
-  studentId.textContent = `学号：${student.studentId || "未填写"}`;
+  studentId.textContent = `${fieldLabels.identifier}：${student.studentId || "未填写"}`;
 
   const badge = document.createElement("span");
   badge.className = `status-badge status-${student.status}`;
@@ -324,8 +388,8 @@ function exportResult() {
   }
 
   const rows = students.map((student) => ({
-    学号: student.studentId,
-    姓名: student.name,
+    [fieldLabels.identifier]: student.studentId,
+    [fieldLabels.name]: student.name,
     签到状态: getStatusLabel(student.status),
     操作时间: student.time
   }));

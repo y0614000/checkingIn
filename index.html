@@ -13,7 +13,7 @@
 
       <div class="toolbar" aria-label="考勤操作">
         <label class="button primary" for="excelFile">导入名单</label>
-        <input id="excelFile" class="file-input" type="file" accept=".xlsx,.xls">
+        <input id="excelFile" class="file-input" type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel">
         <button id="exportBtn" class="button" type="button">导出结果</button>
         <button id="clearBtn" class="button danger" type="button">清空记录</button>
         <button id="resetBtn" class="button warning" type="button">全部设为未签到</button>
@@ -52,7 +52,7 @@
     </section>
 
     <section class="search-section">
-      <input id="searchInput" class="search-input" type="search" placeholder="搜索姓名或学号">
+      <input id="searchInput" class="search-input" type="search" placeholder="搜索姓名或编号">
     </section>
 
     <section class="list-section">
