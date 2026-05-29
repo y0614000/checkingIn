@@ -1,0 +1,264 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  color: #1f2937;
+  background: #f4f6f8;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "Microsoft YaHei", Arial, sans-serif;
+}
+
+.app {
+  width: min(100%, 980px);
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.app-header {
+  margin-bottom: 14px;
+}
+
+h1 {
+  margin: 0 0 14px;
+  font-size: 26px;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.toolbar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  color: #ffffff;
+  background: #2f6f9f;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.button:active {
+  transform: translateY(1px);
+}
+
+.button.primary {
+  background: #157f63;
+}
+
+.button.warning {
+  background: #b45309;
+}
+
+.button.danger {
+  background: #b91c1c;
+}
+
+.file-input {
+  display: none;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.stat-item {
+  min-height: 72px;
+  padding: 10px;
+  border: 1px solid #d9e0e7;
+  border-radius: 8px;
+  background: #ffffff;
+  text-align: center;
+}
+
+.stat-label {
+  display: block;
+  margin-bottom: 6px;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.stat-item strong {
+  font-size: 24px;
+}
+
+.search-section {
+  margin-bottom: 12px;
+}
+
+.search-input {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  font-size: 16px;
+  outline: none;
+}
+
+.search-input:focus {
+  border-color: #2f6f9f;
+  box-shadow: 0 0 0 3px rgba(47, 111, 159, 0.14);
+}
+
+.student-list {
+  display: grid;
+  gap: 10px;
+}
+
+.student-card {
+  border: 1px solid #d9e0e7;
+  border-radius: 8px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.student-info {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid #edf0f3;
+}
+
+.student-name {
+  margin: 0 0 4px;
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.student-id {
+  margin: 0;
+  color: #6b7280;
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.status-badge {
+  min-width: 78px;
+  padding: 6px 8px;
+  border-radius: 999px;
+  color: #ffffff;
+  background: #6b7280;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.status-normal {
+  background: #15803d;
+}
+
+.status-late {
+  background: #c2410c;
+}
+
+.status-personalLeave {
+  background: #7c3aed;
+}
+
+.status-sickLeave {
+  background: #0369a1;
+}
+
+.status-absent {
+  background: #b91c1c;
+}
+
+.status-unchecked {
+  background: #6b7280;
+}
+
+.status-buttons {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px;
+}
+
+.status-btn {
+  min-height: 42px;
+  padding: 8px 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #334155;
+  background: #f8fafc;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.status-btn.active {
+  color: #ffffff;
+  border-color: transparent;
+  background: #2f6f9f;
+  box-shadow: 0 0 0 3px rgba(47, 111, 159, 0.18);
+}
+
+.status-btn:active {
+  transform: translateY(1px);
+}
+
+.empty-tip {
+  margin: 22px 0 0;
+  color: #6b7280;
+  text-align: center;
+}
+
+@media (max-width: 720px) {
+  .app {
+    padding: 12px;
+  }
+
+  h1 {
+    font-size: 24px;
+  }
+
+  .toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 430px) {
+  .toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .student-info {
+    grid-template-columns: 1fr;
+  }
+
+  .status-badge {
+    width: fit-content;
+  }
+
+  .status-buttons {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
