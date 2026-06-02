@@ -251,11 +251,13 @@ function countByStatus(status) {
 }
 
 function renderStudentList() {
-  const keyword = searchInput.value.trim().toLowerCase();
+  const keyword = normalizeSearchKeyword(searchInput.value);
   const filteredStudents = students.filter((student) => {
-    const studentId = String(student.studentId || "").toLowerCase();
-    const name = String(student.name || "").toLowerCase();
-    return studentId.includes(keyword) || name.includes(keyword);
+    if (!keyword) {
+      return true;
+    }
+
+    return getStudentSearchText(student).includes(keyword);
   });
 
   studentList.innerHTML = "";
@@ -269,6 +271,48 @@ function renderStudentList() {
   });
 
   studentList.appendChild(fragment);
+}
+
+function getStudentSearchText(student) {
+  const studentId = normalizeSearchKeyword(student.studentId);
+  const name = normalizeSearchKeyword(student.name);
+  const pinyinVariants = getNamePinyinVariants(student.name);
+
+  return [studentId, name, ...pinyinVariants].join(" ");
+}
+
+function getNamePinyinVariants(name) {
+  const normalizedName = String(name || "");
+
+  if (!normalizedName || !window.pinyinPro || typeof window.pinyinPro.pinyin !== "function") {
+    return [];
+  }
+
+  try {
+    const fullPinyin = window.pinyinPro.pinyin(normalizedName, {
+      toneType: "none",
+      type: "string",
+      separator: ""
+    });
+    const firstLetters = window.pinyinPro.pinyin(normalizedName, {
+      pattern: "first",
+      toneType: "none",
+      type: "string",
+      separator: ""
+    });
+
+    return [fullPinyin, firstLetters].map(normalizeSearchKeyword);
+  } catch (error) {
+    console.error("姓名拼音转换失败：", error);
+    return [];
+  }
+}
+
+function normalizeSearchKeyword(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "");
 }
 
 function createStudentCard(student) {
